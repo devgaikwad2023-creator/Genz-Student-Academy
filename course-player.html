@@ -7,7 +7,6 @@
     <link rel="icon" type="image/png" href="Genz Student Academy logo.png">
     <link rel="stylesheet" href="style.css">
     
-    <!-- Loaded jsPDF securely -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
@@ -211,7 +210,6 @@
         </main>
     </div>
 
-    <!-- MAIN INTERACTIVE INPUT WINDOW MODAL -->
     <div id="name-modal" class="cert-modal">
         <div class="cert-modal-content">
             <h2 style="color: #38bdf8; margin-top: 0;">Claim Your Certificate 🎓</h2>
@@ -460,12 +458,12 @@
                 }
 
                 // 2. Main Title Typography Area with Glow Effect Simulation
-                docCert.setTextColor(30, 144, 255); // Outer soft glow layer
+                docCert.setTextColor(30, 144, 255); 
                 docCert.setFont('helvetica', 'bold');
                 docCert.setFontSize(32);
-                docCert.text("GENZ STUDENT ACADEMY", 422, 123, { align: 'center' }); // Offset
+                docCert.text("GENZ STUDENT ACADEMY", 422, 123, { align: 'center' }); 
                 
-                docCert.setTextColor(56, 189, 248); // Sharp top text layer
+                docCert.setTextColor(56, 189, 248); 
                 docCert.text("GENZ STUDENT ACADEMY", 421, 122, { align: 'center' });
 
                 docCert.setTextColor(255, 255, 255);
@@ -505,14 +503,14 @@
                 docCert.setFontSize(9);
                 docCert.text("GenZ Student Academy is registered under the Ministry of Micro, Small & Medium Enterprises (MSME), Government of India", 421, 505, { align: 'center' });
                 
-                // Breaking line to apply Blue color on exact Numbers dynamically
+                // Fixed alignment variables instead of using un-closed brackets
                 docCert.text("Official MSME Registration No: ", 170, 518);
-                docCert.setTextColor(56, 189, 248); // Blue for ID
+                docCert.setTextColor(56, 189, 248); 
                 docCert.text("UDYAM-MH-33-0770442", 283, 518);
                 
                 docCert.setTextColor(100, 116, 139);
                 docCert.text(" | Recognized under Startup India Hub (BHASKAR ID: ", 373, 518);
-                docCert.setTextColor(56, 189, 248); // Blue for ID
+                docCert.setTextColor(56, 189, 248); 
                 docCert.text("IN-0626-9479GX", 563, 518);
                 
                 docCert.setTextColor(100, 116, 139);
@@ -529,7 +527,7 @@
                 docCert.text("Date of Issue: " + formattedDate, 80, 420);
                 
                 docCert.text("Verification ID: ", 80, 435);
-                docCert.setTextColor(56, 189, 248); // Blue ID
+                docCert.setTextColor(56, 189, 248); 
                 docCert.text("GZ-" + Math.floor(100000 + Math.random() * 900000), 142, 435);
 
                 // Simulated Barcode/QR Box Style
@@ -546,7 +544,6 @@
                 if (sigImg.complete && sigImg.naturalWidth !== 0) {
                     docCert.addImage(sigImg, 'PNG', 655, 385, 90, 42);
                 } else {
-                    // Styled Fallback if signature file takes time to read
                     docCert.setTextColor(56, 189, 248);
                     docCert.setFont('courier', 'bolditalic');
                     docCert.setFontSize(14);
