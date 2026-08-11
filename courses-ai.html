@@ -393,37 +393,58 @@
             <h3>Scan QR Code to Pay ₹399 📱</h3>
             <p style="color: #94a3b8; font-size: 13px;">Scan using Google Pay, PhonePe, Paytm or any UPI App</p>
             
-            <!-- Dynamic UPI QR Code Image -->
-            <img src="QR CODE - Copy.jpeg" alt="UPI QR Code" class="qr-img">
+            <!-- Local repo QR Code Image -->
+            <img src="QR CODE.jpeg" alt="UPI QR Code" class="qr-img">
 
             <div class="upi-box">
                 <span id="upiIdText" style="font-size: 14px; font-weight: bold; color: #38bdf8;">gaikwadmanik791@oksbi</span>
                 <button class="copy-btn" onclick="copyUPI()">Copy</button>
             </div>
 
-            <p style="color: #94a3b8; font-size: 12px; margin-bottom: 12px;">After payment, send screenshot on WhatsApp for instant course activation.</p>
+            <p style="color: #94a3b8; font-size: 12px; margin-bottom: 12px;">Once payment is completed, course access will be updated automatically in your account.</p>
 
-            <a id="whatsappBtn" href="https://wa.me/91 7738171916?text=Hello%20GenZ%20Academy,%20I%20have%20paid%20Rs.399%20for%20AI%20Course.%20Please%20verify%20my%20payment." target="_blank" class="cta-btn" style="display: block; width: 100%; font-size: 15px; padding: 12px; text-decoration: none; margin-bottom: 8px;">Verify Payment on WhatsApp 💬</a>
-            
             <button class="close-btn" onclick="closeModal()">Close Window</button>
         </div>
     </div>
 
     <script type="module">
-        import { auth } from "./firebase.js"; 
+        import { auth, db } from "./firebase.js"; 
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         let currentUser = null;
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             currentUser = user;
         });
 
-        window.handleEnrollClick = function() {
+        window.handleEnrollClick = async function() {
             if (!currentUser) {
                 alert("Please Login or Sign Up first to enroll in the course!");
                 window.location.href = "https://genzstudentacademy.in/login.html";
-            } else {
+                return;
+            }
+
+            try {
+                // Check Firebase Firestore for True/False status
+                const userDocRef = doc(db, "userProgress", currentUser.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    // Checking if AI Course enrollment status is TRUE
+                    if (userData.aiCourseEnrolled === true) {
+                        alert("Access Granted! Redirecting to Course Player...");
+                        window.location.href = "course-player.html";
+                        return;
+                    }
+                }
+                
+                // If false or not enrolled, show Payment QR Code Modal
+                document.getElementById('paymentModal').style.display = 'flex';
+
+            } catch (error) {
+                console.error("Firebase Check Error:", error);
                 document.getElementById('paymentModal').style.display = 'flex';
             }
         };
