@@ -195,7 +195,7 @@
             margin-bottom: 10px;
         }
 
-        /* --- MODAL / POPUP --- */
+        /* --- PAYMENT MODAL --- */
         .modal {
             display: none;
             position: fixed;
@@ -211,25 +211,42 @@
         .modal-content {
             background: #1e293b;
             border: 1px solid #334155;
-            padding: 30px;
+            padding: 25px;
             border-radius: 15px;
             width: 90%;
-            max-width: 450px;
+            max-width: 420px;
             text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
         .modal-content h3 {
             color: #38bdf8;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
+        .qr-img {
+            width: 260px;
+            height: auto;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 2px solid #38bdf8;
+        }
+        .upi-box {
+            background: #0f172a;
+            padding: 10px;
             border-radius: 8px;
             border: 1px solid #334155;
-            background: #0f172a;
-            color: white;
-            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .copy-btn {
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 5px 12px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
         }
         .close-btn {
             background: #475569;
@@ -239,6 +256,7 @@
             border-radius: 5px;
             cursor: pointer;
             margin-top: 10px;
+            width: 100%;
         }
     </style>
 </head>
@@ -250,7 +268,7 @@
             <span class="badge">🔥 Most Demanding Skill of 2026</span>
             <h1>AI & Prompt Engineering <span>Mastery Course</span></h1>
             <p>Master ChatGPT, Claude & Top AI Tools to Supercharge Your Productivity, Studies, Assignments & Future Career in 30 Days!</p>
-            <button class="cta-btn" onclick="openModal()">Enroll Now @ ₹499 Only</button>
+            <button class="cta-btn" onclick="handleEnrollClick()">Enroll Now @ ₹399 Only</button>
         </div>
     </section>
 
@@ -355,7 +373,7 @@
     <div class="container">
         <div class="pricing-section">
             <h2>Special Launch Offer 🚀</h2>
-            <div class="price-tag">₹499 <span>₹1,999</span></div>
+            <div class="price-tag">₹399 <span>₹1,999</span></div>
             <p>Get full lifetime access to video lectures, notes & certificate.</p>
             
             <div class="bonus-list">
@@ -365,28 +383,62 @@
                 <p>✅ Verified Certificate of Completion</p>
             </div>
 
-            <button class="cta-btn" onclick="openModal()">Get Instant Access Now</button>
+            <button class="cta-btn" onclick="handleEnrollClick()">Get Instant Access Now</button>
         </div>
     </div>
 
-    <!-- ENROLLMENT MODAL -->
-    <div id="enrollModal" class="modal">
+    <!-- PAYMENT MODAL -->
+    <div id="paymentModal" class="modal">
         <div class="modal-content">
-            <h3>Enroll in AI Mastery Course 🎓</h3>
-            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Enter your details below to proceed to checkout.</p>
+            <h3>Scan QR Code to Pay ₹399 📱</h3>
+            <p style="color: #94a3b8; font-size: 13px;">Scan using Google Pay, PhonePe, Paytm or any UPI App</p>
             
-            <input type="text" id="studentName" class="form-input" placeholder="Full Name" required>
-            <input type="email" id="studentEmail" class="form-input" placeholder="Email Address" required>
-            <input type="tel" id="studentPhone" class="form-input" placeholder="Phone Number" required>
+            <!-- Dynamic UPI QR Code Image -->
+            <img src="https://i.ibb.co/sJ32KydJ/QR-CODE.jpg" alt="UPI QR Code" class="qr-img">
 
-            <button class="cta-btn" style="width: 100%; font-size: 16px; padding: 12px;" onclick="processPayment()">Proceed to Pay ₹499</button>
-            <button class="close-btn" onclick="closeModal()">Close</button>
+            <div class="upi-box">
+                <span id="upiIdText" style="font-size: 14px; font-weight: bold; color: #38bdf8;">gaikwadmanik791@oksbi</span>
+                <button class="copy-btn" onclick="copyUPI()">Copy</button>
+            </div>
+
+            <p style="color: #94a3b8; font-size: 12px; margin-bottom: 12px;">After payment, send screenshot on WhatsApp for instant course activation.</p>
+
+            <a id="whatsappBtn" href="https://wa.me/917912345678?text=Hello%20GenZ%20Academy,%20I%20have%20paid%20Rs.399%20for%20AI%20Course.%20Please%20verify%20my%20payment." target="_blank" class="cta-btn" style="display: block; width: 100%; font-size: 15px; padding: 12px; text-decoration: none; margin-bottom: 8px;">Verify Payment on WhatsApp 💬</a>
+            
+            <button class="close-btn" onclick="closeModal()">Close Window</button>
         </div>
     </div>
 
-    <script>
-        // Accordion Toggle
-        function toggleAccordion(header) {
+    <script type="module">
+        import { auth } from "./firebase.js"; 
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        let currentUser = null;
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+        });
+
+        window.handleEnrollClick = function() {
+            if (!currentUser) {
+                alert("Please Login or Sign Up first to enroll in the course!");
+                window.location.href = "https://genzstudentacademy.in/login.html";
+            } else {
+                document.getElementById('paymentModal').style.display = 'flex';
+            }
+        };
+
+        window.closeModal = function() {
+            document.getElementById('paymentModal').style.display = 'none';
+        };
+
+        window.copyUPI = function() {
+            const upi = document.getElementById('upiIdText').innerText;
+            navigator.clipboard.writeText(upi);
+            alert("UPI ID Copied: " + upi);
+        };
+
+        window.toggleAccordion = function(header) {
             const content = header.nextElementSibling;
             const isOpen = content.style.display === "block";
             
@@ -397,30 +449,7 @@
                 content.style.display = "block";
                 header.querySelector('span').innerText = "-";
             }
-        }
-
-        // Modal Controls
-        function openModal() {
-            document.getElementById('enrollModal').style.display = 'flex';
-        }
-        function closeModal() {
-            document.getElementById('enrollModal').style.display = 'none';
-        }
-
-        // Dummy Payment Handler (You can integrate Razorpay / PhonePe Gateway here)
-        function processPayment() {
-            const name = document.getElementById('studentName').value.trim();
-            const email = document.getElementById('studentEmail').value.trim();
-            const phone = document.getElementById('studentPhone').value.trim();
-
-            if(!name || !email || !phone) {
-                alert("Please fill in all details before proceeding!");
-                return;
-            }
-
-            alert(`Thank you ${name}! Directing you to payment gateway...`);
-            // Yahan par aap Razorpay / Payment Gateway ka JavaScript Trigger kar sakte hain.
-        }
+        };
     </script>
 </body>
 </html>
