@@ -151,7 +151,7 @@
 
     <div class="player-container">
         <aside class="lesson-sidebar">
-            <h3>Course Content</h3>
+            <h3 id="sidebar-course-title">Course Content</h3>
             <div class="progress-container">
                 <small id="progress-text">Course Progress: 0%</small>
                 <div class="progress-bar">
@@ -159,38 +159,33 @@
                 </div>
             </div>
             
-            <ul class="lecture-list">
-                <li class="lecture-item active" id="item-l1" onclick="changeLecture(1)">1. Introduction of Resume Mastery</li>
-                <li class="lecture-item" id="item-l2" onclick="changeLecture(2)">2. Formatting Guidance & Keyword Mapping</li>
-                <li class="lecture-item" id="item-l3" onclick="changeLecture(3)">3. Perfect Resume Structure & Sections</li>
-                <li class="lecture-item" id="item-l4" onclick="changeLecture(4)">4. ATS Optimization & Final Review</li>
-                
-                <li class="lecture-item" id="item-assign" onclick="showAssignment()" style="margin-top: 15px; border-top: 1px solid #334155; padding-top: 15px; color: #38bdf8; font-weight: bold;">📝 Course Assignment</li>
+            <ul class="lecture-list" id="lecture-list-container">
+                <!-- Lectures dynamically injected via JS -->
             </ul>
         </aside>
 
         <main class="video-section-player">
             <div id="video-content-wrapper">
                 <div class="video-box">
-                    <iframe id="main-video" src="https://drive.google.com/file/d/1fTT6QTgN31dS__QL6oo4aABjpPRF4u1M/preview" frameborder="0" allow="autoplay" allowfullscreen></iframe>
+                    <iframe id="main-video" src="" frameborder="0" allow="autoplay" allowfullscreen></iframe>
                     <div class="video-overlay"></div>
                 </div>
 
                 <div class="video-details">
-                    <h1 id="video-title" style="font-size: 32px; margin-bottom: 10px; color: #38bdf8;">Lecture 1: Introduction to Resume Mastery</h1>
-                    <p id="video-desc" style="color: #94a3b8; line-height: 1.6; max-width: 800px; margin: 10px auto;">In this lecture we are going to learn about the Resume mastery, ATS, 10 Seconds Resume Filteration.</p>
+                    <h1 id="video-title" style="font-size: 32px; margin-bottom: 10px; color: #38bdf8;">Loading Lecture...</h1>
+                    <p id="video-desc" style="color: #94a3b8; line-height: 1.6; max-width: 800px; margin: 10px auto;">Please wait while content loads.</p>
                 </div>
             </div>
 
             <div id="assignment-content-wrapper" style="display: none;">
                 <div class="assignment-box">
                     <h1 style="font-size: 32px; margin-bottom: 10px; color: #38bdf8;">Final Course Assignment</h1>
-                    <p style="color: #94a3b8; line-height: 1.6;">Aapne jo charo lectures mein seekha hai, uske hisab se apna ek ATS-friendly Resume banayein aur uski <b>PDF file</b> niche upload karke submit karein.</p>
+                    <p id="assignment-instruction-text" style="color: #94a3b8; line-height: 1.6;">Course assignment instructions will appear here.</p>
                     
                     <div class="file-input-wrapper">
                         <label for="assignment-file" style="cursor: pointer; display: block; color: #94a3b8;">
                             <span style="font-size: 30px; display: block; margin-bottom: 5px;">📤</span>
-                            <span id="file-label">Click here to choose your Resume PDF file</span>
+                            <span id="file-label">Click here to choose your Assignment PDF file</span>
                         </label>
                         <input type="file" id="assignment-file" accept=".pdf" style="display: none;" onchange="updateFileName()">
                     </div>
@@ -241,41 +236,78 @@
         import { auth, db } from "./firebase.js"; 
         import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+        // --- DETECT ACTIVE COURSE FROM URL ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentCourse = urlParams.get('course') || 'resume'; // default to 'resume'
+
+        // --- COURSE CONFIGURATIONS ---
+        const courseConfigs = {
+            resume: {
+                title: "Resume Mastery",
+                certTitle: "RESUME MASTERY: THE ATS-FRIENDLY FORMULA",
+                fieldPrefix: "", // standard fields (lastLectureId, maxLectureVisited, assignmentSubmitted)
+                totalLectures: 4,
+                assignmentText: "Aapne jo charo lectures mein seekha hai, uske hisab se apna ek ATS-friendly Resume banayein aur uski <b>PDF file</b> niche upload karke submit karein.",
+                lectures: [
+                    { id: 1, title: "Lecture 1: Introduction to Resume Mastery", url: "https://drive.google.com/file/d/1fTT6QTgN31dS__QL6oo4aABjpPRF4u1M/preview", desc: "In this lecture we are going to learn about the Resume mastery, ATS, 10 Seconds Resume Filteration." },
+                    { id: 2, title: "2. Formatting Guidance & Keywords Mapping", url: "https://drive.google.com/file/d/1KGCRFeMUz2_ZVv4jvvtkBwKfa0o02F1K/preview", desc: "Resume Formatting & Keywords to mark in JD & Resume." },
+                    { id: 3, title: "3. Perfect Resume Structure & Sections", url: "https://drive.google.com/file/d/144Uz3rNkwK_jIVo_FUMYBbxqc-3koU09/preview", desc: "In this lecture, we will deeply dive into building an aesthetic and readable resume structure." },
+                    { id: 4, title: "4. ATS Optimization & Final Review", url: "https://drive.google.com/file/d/1nNudxP0k2bPzCla6qEfIaMN6IqI3YpA8/preview", desc: "Passing the ATS scanner with strategic optimization rules and concluding the final layout review." }
+                ]
+            },
+            ai: {
+                title: "AI & Prompt Engineering Mastery",
+                certTitle: "AI & PROMPT ENGINEERING MASTERY",
+                fieldPrefix: "ai_", // isolated fields (ai_lastLectureId, ai_maxLectureVisited, ai_assignmentSubmitted)
+                totalLectures: 5,
+                assignmentText: "Aapne jo AI modules mein seekha hai, uske hisab se apna ek <b>AI Prompt Toolkit & Study Blueprint PDF</b> upload karke submit karein.",
+                lectures: [
+                    { id: 1, title: "1. Introduction to the AI Revolution 🤖", url: "https://drive.google.com/file/d/1fTT6QTgN31dS__QL6oo4aABjpPRF4u1M/preview", desc: "What is Generative AI, LLMs, and setting up ChatGPT, Claude & Gemini." },
+                    { id: 2, title: "2. Prompt Engineering Core Formulas ✍️", url: "https://drive.google.com/file/d/1KGCRFeMUz2_ZVv4jvvtkBwKfa0o02F1K/preview", desc: "Golden Prompt Formula: Role + Context + Task + Constraints + Format." },
+                    { id: 3, title: "3. AI for Academic Success & Study Hacks 🎓", url: "https://drive.google.com/file/d/144Uz3rNkwK_jIVo_FUMYBbxqc-3koU09/preview", desc: "Summarizing research papers, creating quizzes, and 5x faster study workflows." },
+                    { id: 4, title: "4. Career & Job Prep with AI 💼", url: "https://drive.google.com/file/d/1nNudxP0k2bPzCla6qEfIaMN6IqI3YpA8/preview", desc: "Building ATS Resumes, Cover Letters, and Mock Interview Prep with AI." },
+                    { id: 5, title: "5. Media Creation & AI Automation 🎨", url: "https://drive.google.com/file/d/1fTT6QTgN31dS__QL6oo4aABjpPRF4u1M/preview", desc: "AI Image Generation, Presentation Creation, and Task Automation." }
+                ]
+            }
+        };
+
+        const activeConfig = courseConfigs[currentCourse] || courseConfigs.resume;
         let maxLectureVisited = 1;
         let isAssignmentSubmitted = false;
 
-        const lectures = [
-            { 
-                id: 1, 
-                title: "Lecture 1: Introduction to Resume Mastery", 
-                url: "https://drive.google.com/file/d/1fTT6QTgN31dS__QL6oo4aABjpPRF4u1M/preview", 
-                desc: "In this lecture we are going to learn about the Resume mastery, ATS, 10 Seconds Resume Filteration." 
-            },
-            { 
-                id: 2, 
-                title: "2. Formatting Guidance & Keywords Mapping", 
-                url: "https://drive.google.com/file/d/1KGCRFeMUz2_ZVv4jvvtkBwKfa0o02F1K/preview", 
-                desc: "Resume Formatting & Keywords to mark in JD & Resume." 
-            },
-            { 
-                id: 3, 
-                title: "3. Perfect Resume Structure & Sections", 
-                url: "https://drive.google.com/file/d/144Uz3rNkwK_jIVo_FUMYBbxqc-3koU09/preview", 
-                desc: "In this lecture, we will deeply dive into building an aesthetic and readable resume structure." 
-            },
-            { 
-                id: 4, 
-                title: "4. ATS Optimization & Final Review", 
-                url: "https://drive.google.com/file/d/1nNudxP0k2bPzCla6qEfIaMN6IqI3YpA8/preview", 
-                desc: "Passing the ATS scanner with strategic optimization rules and concluding the final layout review." 
-            }
-        ];
+        // Render Lecture List dynamically
+        function renderLectureList() {
+            const container = document.getElementById('lecture-list-container');
+            container.innerHTML = '';
+
+            activeConfig.lectures.forEach((lec, idx) => {
+                const li = document.createElement('li');
+                li.className = 'lecture-item' + (idx === 0 ? ' active' : '');
+                li.id = 'item-l' + lec.id;
+                li.onclick = () => changeLecture(lec.id);
+                li.innerText = lec.title;
+                container.appendChild(li);
+            });
+
+            // Add Assignment item
+            const assignLi = document.createElement('li');
+            assignLi.className = 'lecture-item';
+            assignLi.id = 'item-assign';
+            assignLi.onclick = () => showAssignment();
+            assignLi.style = "margin-top: 15px; border-top: 1px solid #334155; padding-top: 15px; color: #38bdf8; font-weight: bold;";
+            assignLi.innerText = "📝 Course Assignment";
+            container.appendChild(assignLi);
+
+            document.getElementById('assignment-instruction-text').innerHTML = activeConfig.assignmentText;
+        }
+
+        renderLectureList();
 
         window.changeLecture = async function(id) {
             document.getElementById('video-content-wrapper').style.display = 'block';
             document.getElementById('assignment-content-wrapper').style.display = 'none';
 
-            const lecture = lectures.find(l => l.id === id);
+            const lecture = activeConfig.lectures.find(l => l.id === id);
             if (!lecture) return;
             document.getElementById('main-video').src = lecture.url;
             document.getElementById('video-title').innerText = lecture.title;
@@ -296,20 +328,22 @@
             const user = auth.currentUser;
             if (user) {
                 try {
-                    await setDoc(doc(db, "userProgress", user.uid), {
-                       lastLectureId: id,
-                       lastTitle: lecture.title,
-                       lastVideoId: lecture.url.split('/').pop(),
-                       maxLectureVisited: maxLectureVisited,
-                       timestamp: new Date()
-                    }, { merge: true });
-                } catch (e) { console.error("Error saving:", e); }
+                    const updateObj = {};
+                    const prefix = activeConfig.fieldPrefix;
+                    updateObj[prefix + 'lastLectureId'] = id;
+                    updateObj[prefix + 'lastTitle'] = lecture.title;
+                    updateObj[prefix + 'maxLectureVisited'] = maxLectureVisited;
+                    updateObj[prefix + 'timestamp'] = new Date();
+
+                    await setDoc(doc(db, "userProgress", user.uid), updateObj, { merge: true });
+                } catch (e) { console.error("Error saving progress:", e); }
             }
         };
 
         function updateProgressUI() {
-            let videoProgress = maxLectureVisited * 20; 
-            if(maxLectureVisited >= 4) videoProgress = 80; 
+            const totalLecs = activeConfig.totalLectures;
+            let videoProgress = Math.round((maxLectureVisited / totalLecs) * 80); 
+            if(maxLectureVisited >= totalLecs) videoProgress = 80; 
 
             let finalProgress = videoProgress;
             if(isAssignmentSubmitted) {
@@ -343,18 +377,20 @@
         window.submitAssignment = async function() {
             const fileInput = document.getElementById('assignment-file');
             if(fileInput.files.length === 0) {
-                alert("Please select your resume PDF file first!");
+                alert("Please select your assignment PDF file first!");
                 return;
             }
             
             const user = auth.currentUser;
             if (user) {
                 try {
-                    await setDoc(doc(db, "userProgress", user.uid), {
-                        assignmentSubmitted: true,
-                        assignmentTimestamp: new Date(),
-                        maxLectureVisited: 4 
-                    }, { merge: true });
+                    const updateObj = {};
+                    const prefix = activeConfig.fieldPrefix;
+                    updateObj[prefix + 'assignmentSubmitted'] = true;
+                    updateObj[prefix + 'assignmentTimestamp'] = new Date();
+                    updateObj[prefix + 'maxLectureVisited'] = activeConfig.totalLectures;
+
+                    await setDoc(doc(db, "userProgress", user.uid), updateObj, { merge: true });
 
                     isAssignmentSubmitted = true;
                     alert("Success! Your assignment has been submitted successfully.");
@@ -380,10 +416,10 @@
         }
 
         window.handleCertificateClick = function() {
-            if (isAssignmentSubmitted && maxLectureVisited >= 4) {
+            if (isAssignmentSubmitted && maxLectureVisited >= activeConfig.totalLectures) {
                 document.getElementById('name-modal').style.display = 'flex';
             } else {
-                alert("Please complete all 4 lectures and submit your assignment first!");
+                alert(`Please complete all ${activeConfig.totalLectures} lectures and submit your assignment first!`);
             }
         };
 
@@ -391,7 +427,7 @@
             document.getElementById('name-modal').style.display = 'none';
         };
 
-        // --- NEW HIGHLY CUSTOMIZED PREMIUM HIGH-RES GENERATOR ---
+        // --- PREMIUM DYNAMIC CERTIFICATE GENERATOR ---
         window.generatePDF = function() {
             const studentName = document.getElementById('cert-student-name').value.trim();
             if(!studentName) {
@@ -424,7 +460,6 @@
             docCert.setLineWidth(1.5);
             docCert.rect(26, 26, 790, 543);
 
-            // Function to load all images asynchronously and safely render together
             const loadImages = () => {
                 const logoImg = new Image();
                 logoImg.src = 'Genz Student Academy logo.png';
@@ -443,21 +478,21 @@
                 };
 
                 logoImg.onload = imageLoaded;
-                logoImg.onerror = imageLoaded; // Fallback if missing
+                logoImg.onerror = imageLoaded; 
                 sigImg.onload = imageLoaded;
-                sigImg.onerror = imageLoaded;   // Fallback if missing
+                sigImg.onerror = imageLoaded;   
             };
 
             const renderFinalPDF = (logoImg, sigImg) => {
-                // 1. Draw Academy Logo at Top Center (Sized correctly at 55x55)
+                // 1. Academy Logo
                 if (logoImg.complete && logoImg.naturalWidth !== 0) {
                     docCert.addImage(logoImg, 'PNG', 393, 38, 55, 55);
                 }
 
-                // 2. Main Title Typography Area
+                // 2. Titles
                 docCert.setTextColor(56, 189, 248);
                 docCert.setFont('helvetica', 'bold');
-                docCert.setFontSize(32); // Increased for high-end look
+                docCert.setFontSize(32); 
                 docCert.text("GENZ STUDENT ACADEMY", 421, 122, { align: 'center' });
 
                 docCert.setTextColor(255, 255, 255);
@@ -469,13 +504,13 @@
                 docCert.setFontSize(12);
                 docCert.text("This is proudly presented to", 421, 202, { align: 'center' });
 
-                // 3. Student Name (Super Bold & Huge)
+                // 3. Student Name
                 docCert.setTextColor(255, 255, 255);
                 docCert.setFont('helvetica', 'bold');
                 docCert.setFontSize(38);
                 docCert.text(studentName.toUpperCase(), 421, 252, { align: 'center' });
 
-                // Accent Line under name
+                // Accent Line
                 docCert.setDrawColor(56, 189, 248);
                 docCert.setLineWidth(2);
                 docCert.line(260, 268, 582, 268);
@@ -486,25 +521,25 @@
                 docCert.setFontSize(12);
                 docCert.text("for successfully mastering all modules, practical strategies, and optimization metrics in the", 421, 312, { align: 'center' });
                 
+                // Dynamic Course Title on Certificate
                 docCert.setTextColor(56, 189, 248);
                 docCert.setFont('helvetica', 'bold');
                 docCert.setFontSize(18);
-                docCert.text("RESUME MASTERY: THE ATS-FRIENDLY FORMULA", 421, 345, { align: 'center' });
+                docCert.text(activeConfig.certTitle, 421, 345, { align: 'center' });
 
-                // 4. Legal Footer Block with Sparkling Neon Colors Added Safely
+                // 4. Legal Footer Block with Sparkling Neon Colors
                 docCert.setTextColor(100, 116, 139);
                 docCert.setFont('helvetica', 'normal');
                 docCert.setFontSize(9);
                 docCert.text("GenZ Student Academy is registered under the Ministry of Micro, Small & Medium Enterprises (MSME), Government of India", 421, 518, { align: 'center' });
                 
-                // Segments to safely color the text strings dynamically
                 docCert.text("Official MSME Registration No: ", 170, 530);
-                docCert.setTextColor(56, 189, 248); // Sparking Blue
+                docCert.setTextColor(56, 189, 248); 
                 docCert.text("UDYAM-MH-33-0770442", 283, 530);
                 
                 docCert.setTextColor(100, 116, 139);
                 docCert.text(" | Recognized under Startup India Hub (BHASKAR ID: ", 373, 530);
-                docCert.setTextColor(56, 189, 248); // Sparking Blue
+                docCert.setTextColor(56, 189, 248); 
                 docCert.text("IN-0626-9479GX", 563, 530);
                 
                 docCert.setTextColor(100, 116, 139);
@@ -512,7 +547,7 @@
                 
                 docCert.text("Officially Certified & Committed Partner of MyGov Innovate India Pledge Campaign", 421, 542, { align: 'center' });
 
-                // 5. Left Side Metadata (Issue Date & ID with blue sparking highlight)
+                // 5. Left Side Metadata (Issue Date & ID)
                 const today = new Date();
                 const formattedDate = today.getDate() + '/' + (today.getMonth()+1) + '/' + today.getFullYear();
 
@@ -521,21 +556,18 @@
                 docCert.text("Date of Issue: " + formattedDate, 80, 440);
                 
                 docCert.text("Verification ID: ", 80, 458);
-                docCert.setTextColor(56, 189, 248); // Sparking Blue
+                docCert.setTextColor(56, 189, 248); 
                 docCert.text("GZ-" + Math.floor(100000 + Math.random() * 900000), 142, 458);
 
-                // 6. Right Side Signature Rendering Area
+                // 6. Right Side Signature Rendering
                 if (sigImg.complete && sigImg.naturalWidth !== 0) {
-                    // Transparent Real Sign Rendering
                     docCert.addImage(sigImg, 'PNG', 655, 395, 90, 42);
                 }
 
-                // Sign Line & Descriptions
                 docCert.setDrawColor(148, 163, 184);
                 docCert.setLineWidth(1);
                 docCert.line(640, 442, 760, 442);
 
-                // Added requested owner name directly above the designation parameters
                 docCert.setTextColor(255, 255, 255);
                 docCert.setFont('helvetica', 'bold');
                 docCert.setFontSize(10);
@@ -548,14 +580,13 @@
                 docCert.setFontSize(8);
                 docCert.text("Founder & CEO, GenZ Student Academy", 700, 474, { align: 'center' });
 
-                // Final Action: Save PDF Document
+                // Save PDF
                 docCert.save("GenZ_Academy_Certificate_" + studentName.replace(/\s+/g, '_') + ".pdf");
                 downloadBtn.innerText = "Download PDF";
                 downloadBtn.disabled = false;
                 window.closeModal();
             };
 
-            // Trigger Image Loading
             loadImages();
         };
 
@@ -563,14 +594,16 @@
             if (user) {
                 const docRef = doc(db, "userProgress", user.uid); 
                 const docSnap = await getDoc(docRef);
+                const prefix = activeConfig.fieldPrefix;
+
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     
-                    isAssignmentSubmitted = data.assignmentSubmitted || false;
-                    maxLectureVisited = data.maxLectureVisited || 1;
+                    isAssignmentSubmitted = data[prefix + 'assignmentSubmitted'] || false;
+                    maxLectureVisited = data[prefix + 'maxLectureVisited'] || 1;
 
-                    if (data.lastLectureId) {
-                        changeLecture(data.lastLectureId);
+                    if (data[prefix + 'lastLectureId']) {
+                        changeLecture(data[prefix + 'lastLectureId']);
                     } else {
                         changeLecture(1);
                     }
